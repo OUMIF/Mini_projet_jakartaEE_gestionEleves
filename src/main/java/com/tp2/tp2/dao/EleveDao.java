@@ -1,13 +1,17 @@
 package com.tp2.tp2.dao;
 
 import com.tp2.tp2.model.Eleve;
+import com.tp2.tp2.model.Filiere;
+import com.tp2.tp2.model.Cours;
 import com.tp2.tp2.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class EleveDao implements ICRUD<Eleve, Integer> {
 
@@ -34,19 +38,54 @@ public class EleveDao implements ICRUD<Eleve, Integer> {
     }
 
     @Override
-    public boolean create(Eleve object) {
+    public boolean create(Eleve eleve) {
         Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
+        Session session = null;
+
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
-            session.persist(object);
+
+            // Attacher la filiere existante
+            Filiere filiere = null;
+            if (eleve.getFiliere() != null && eleve.getFiliere().getId() != null) {
+                filiere = session.get(Filiere.class, eleve.getFiliere().getId());
+            }
+            eleve.setFiliere(filiere);
+
+            // Attacher les cours existants
+            if (eleve.getCours() != null) {
+                Set<Cours> courses = new HashSet<>();
+                for (Cours c : eleve.getCours()) {
+                    Cours coursDB = session.get(Cours.class, c.getId());
+                    if (coursDB != null) {
+                        courses.add(coursDB);
+                    } else {
+                        System.out.println("Cours inexistant: " + c.getId());
+                    }
+                }
+                eleve.setCours(courses.stream().toList());
+            }
+
+            session.persist(eleve);
             transaction.commit();
             return true;
+
         } catch (Exception ex) {
-            if (transaction != null) transaction.rollback();
+            if (transaction != null && transaction.getStatus().canRollback()) {
+                transaction.rollback();
+            }
             System.out.println("Erreur create: " + ex.getMessage());
             return false;
+        } finally {
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
         }
     }
+
+
+
 
     @Override
     public boolean update(Eleve object) {
