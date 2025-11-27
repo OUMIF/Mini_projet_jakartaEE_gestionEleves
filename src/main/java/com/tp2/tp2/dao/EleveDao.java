@@ -46,14 +46,13 @@ public class EleveDao implements ICRUD<Eleve, Integer> {
             session = sessionFactory.openSession();
             transaction = session.beginTransaction();
 
-            // Attacher la filiere existante
+            // Attacher la filiere
             Filiere filiere = null;
             if (eleve.getFiliere() != null && eleve.getFiliere().getId() != null) {
                 filiere = session.get(Filiere.class, eleve.getFiliere().getId());
             }
             eleve.setFiliere(filiere);
-
-            // Attacher les cours existants
+            // Attacher les cours
             if (eleve.getCours() != null) {
                 Set<Cours> courses = new HashSet<>();
                 for (Cours c : eleve.getCours()) {
@@ -83,8 +82,6 @@ public class EleveDao implements ICRUD<Eleve, Integer> {
             }
         }
     }
-
-
 
 
     @Override
